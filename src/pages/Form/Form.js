@@ -234,6 +234,20 @@ class Form extends React.Component {
             DAI_ABI,
             DAI_CONTRACT_ADDRESS
         );
+
+        const balance = await DAI.methods.balanceOf(this.state.accounts[0]).call()
+
+        if (!isNaN(parseInt(balance)) && parseInt(balance) < 300) {
+          this.setState({
+            initiated_transaction: false,
+            insufficient_dai: true,
+            snackbar_open: true,
+          })
+          return;
+        } else {
+          this.setState({initiated_transaction: true});
+        }
+
         try {
             await DAI.methods
                 .transfer(
@@ -267,9 +281,8 @@ class Form extends React.Component {
             const accounts = await window.ethereum.enable();
             let networkID = await web3.eth.net.getId();
             networkID = networkID.toString();
-
             this.setState(
-                { web3, accounts, networkID, initiated_transaction: true },
+                { web3, accounts, networkID },
                 () => {
                     return networkID === "1"
                         ? this.startTransaction(skills_required)
@@ -342,14 +355,13 @@ class Form extends React.Component {
         if (!slot_3) {
             return this.setState({ slot_3_focus: true });
         }
-
         this.setState({ slot_3_focus: false }, () =>
             this.initTransaction(skills_required)
         );
     };
 
     componentDidMount() {
-        ReactGA.pageview(window.location.pathname);
+      ReactGA.pageview(window.location.pathname);
     }
 
     render() {
@@ -363,6 +375,7 @@ class Form extends React.Component {
             networkID,
             snackbar_open,
             invalid_email,
+            insufficient_dai,
             web3,
         } = this.state;
 
@@ -446,6 +459,8 @@ class Form extends React.Component {
                                     ? "The email address provided is not valid!"
                                     : !web3
                                     ? "Not a web3 browser! Install Metamask."
+                                    : insufficient_dai
+                                    ? 'not enough funds'
                                     : "User cancelled transaction!"
                             }
                         ></Snackbar>
